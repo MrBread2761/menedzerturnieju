@@ -1,6 +1,6 @@
 import java.io.Serializable;
 
-// Klasa abstrakcyjna implementująca interfejsy [cite: 450-465, 574-577]
+// Klasa abstrakcyjna implementująca interfejsy
 public abstract class Uczestnik implements Serializable, Zarzadzalny {
     private String nazwa;
     private int punkty;
@@ -10,7 +10,7 @@ public abstract class Uczestnik implements Serializable, Zarzadzalny {
         this.punkty = 0;
     }
 
-    public abstract String pobierzSzczegoly(); // Zmieniono na zwracanie Stringa dla GUI
+    public abstract String pobierzSzczegoly();
 
     public String pobierzNazwe() { return nazwa; }
     public int pobierzPunkty() { return punkty; }
