@@ -1,6 +1,5 @@
 public class GraczSolo extends Uczestnik {
     private String pseudonim;
-    // transient - pole nie będzie zapisywane do pliku podczas serializacji
     private transient boolean obecnyNaTurnieju;
 
     public GraczSolo(String nazwa, String pseudonim) {

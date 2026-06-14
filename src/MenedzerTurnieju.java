@@ -1,16 +1,16 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
-// Wzorzec Singleton zarządzający logiką i danymi
 public class MenedzerTurnieju {
     private static MenedzerTurnieju instancja = null;
     private List<Uczestnik> listaUczestnikow;
+    private HashSet<String> zajeteNazwy;
+    private HashMap<String, Uczestnik> mapaUczestnikow;
 
     private MenedzerTurnieju() {
         listaUczestnikow = new ArrayList<>();
+        zajeteNazwy = new HashSet<>();
+        mapaUczestnikow = new HashMap<>();
     }
 
     public static MenedzerTurnieju pobierzInstancje() {
@@ -20,28 +20,30 @@ public class MenedzerTurnieju {
         return instancja;
     }
 
-    public void dodajUczestnika(Uczestnik u) {
+    public boolean dodajUczestnika(Uczestnik u) {
+        if (zajeteNazwy.contains(u.pobierzNazwe())) {
+            return false;
+        }
         listaUczestnikow.add(u);
+        zajeteNazwy.add(u.pobierzNazwe());
+        mapaUczestnikow.put(u.pobierzNazwe(), u);
+        return true;
     }
 
     public List<Uczestnik> pobierzWszystkich() {
         return listaUczestnikow;
     }
 
-    // Bezpieczne usuwanie obiektu z kolekcji za pomocą Iteratora
     public boolean usunGracza(String nazwa) {
-        Iterator<Uczestnik> it = listaUczestnikow.iterator();
-        while (it.hasNext()) {
-            Uczestnik u = it.next();
-            if (u.pobierzNazwe().equals(nazwa)) {
-                it.remove();
-                return true;
-            }
+        if (mapaUczestnikow.containsKey(nazwa)) {
+            Uczestnik u = mapaUczestnikow.remove(nazwa);
+            listaUczestnikow.remove(u);
+            zajeteNazwy.remove(nazwa);
+            return true;
         }
         return false;
     }
 
-    // Generowanie posortowanej struktury za pomocą PriorityQueue i naszego Komparatora
     public PriorityQueue<Uczestnik> generujTabele() {
         PriorityQueue<Uczestnik> kolejka = new PriorityQueue<>(new KomparatorUczestnikow());
         for (Uczestnik u : listaUczestnikow) {
@@ -50,18 +52,36 @@ public class MenedzerTurnieju {
         return kolejka;
     }
 
-    // Serializacja obiektów
+    public void eksportujRaportTxt(String sciezka) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(sciezka));
+        writer.write("--- RAPORT KOŃCOWY TURNIEJU ---");
+        writer.newLine();
+        PriorityQueue<Uczestnik> tabela = generujTabele();
+        int poz = 1;
+        while (!tabela.isEmpty()) {
+            writer.write(poz + ". " + tabela.poll().pobierzSzczegoly());
+            writer.newLine();
+            poz++;
+        }
+        writer.close();
+    }
+
     public void zapiszStan(String sciezka) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(sciezka));
         out.writeObject(listaUczestnikow);
         out.close();
     }
 
-    // Deserializacja obiektów
     @SuppressWarnings("unchecked")
     public void wczytajStan(String sciezka) throws IOException, ClassNotFoundException {
         ObjectInputStream in = new ObjectInputStream(new FileInputStream(sciezka));
         listaUczestnikow = (List<Uczestnik>) in.readObject();
         in.close();
+        zajeteNazwy.clear();
+        mapaUczestnikow.clear();
+        for (Uczestnik u : listaUczestnikow) {
+            zajeteNazwy.add(u.pobierzNazwe());
+            mapaUczestnikow.put(u.pobierzNazwe(), u);
+        }
     }
 }

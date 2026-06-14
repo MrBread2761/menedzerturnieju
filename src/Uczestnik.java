@@ -1,6 +1,5 @@
 import java.io.Serializable;
 
-// Klasa abstrakcyjna implementująca interfejsy
 public abstract class Uczestnik implements Serializable, Zarzadzalny {
     private String nazwa;
     private int punkty;

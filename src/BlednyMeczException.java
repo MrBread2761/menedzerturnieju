@@ -1,4 +1,3 @@
-// Własna klasa wyjątku dziedzicząca po bazowej klasie Exception
 public class BlednyMeczException extends Exception {
     private String powod;
 
