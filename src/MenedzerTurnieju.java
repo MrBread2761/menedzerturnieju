@@ -4,8 +4,8 @@ import java.util.*;
 public class MenedzerTurnieju {
     private static MenedzerTurnieju instancja = null;
     private List<Uczestnik> listaUczestnikow;
-    private HashSet<String> zajeteNazwy;
-    private HashMap<String, Uczestnik> mapaUczestnikow;
+    private final HashSet<String> zajeteNazwy;
+    private final HashMap<String, Uczestnik> mapaUczestnikow;
 
     private MenedzerTurnieju() {
         listaUczestnikow = new ArrayList<>();
@@ -34,7 +34,7 @@ public class MenedzerTurnieju {
         return listaUczestnikow;
     }
 
-    public boolean usunGracza(String nazwa) {
+    public boolean usunDruzynne(String nazwa) {
         if (mapaUczestnikow.containsKey(nazwa)) {
             Uczestnik u = mapaUczestnikow.remove(nazwa);
             listaUczestnikow.remove(u);
@@ -44,19 +44,60 @@ public class MenedzerTurnieju {
         return false;
     }
 
-    public PriorityQueue<Uczestnik> generujTabele() {
+    public PriorityQueue<Uczestnik> generujTabele(List<Uczestnik> grupa) {
         PriorityQueue<Uczestnik> kolejka = new PriorityQueue<>(new KomparatorUczestnikow());
-        for (Uczestnik u : listaUczestnikow) {
-            kolejka.add(u);
-        }
+        kolejka.addAll(grupa);
         return kolejka;
+    }
+
+    public void logujMeczDoPliku(String wynik) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("historia_meczow.txt", true));
+            bw.write(wynik);
+            bw.newLine();
+            bw.close();
+        } catch (IOException e) {
+            System.err.println("Błąd zapisu do pliku logów: " + e.getMessage());
+        }
+    }
+
+    public int importujDruzynyZTXT(String sciezka) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(sciezka));
+        String linia;
+        int dodano = 0;
+        while ((linia = br.readLine()) != null) {
+            String[] czesci = linia.split(";");
+            if (czesci.length == 6 && WalidatorDanych.sprawdzNazweDruzyny(czesci[0].trim())) {
+                Druzyna d = new Druzyna(czesci[0].trim());
+                GraczSolo[] zawodnicy = new GraczSolo[5];
+                boolean poprawni = true;
+
+                for (int i = 1; i <= 5; i++) {
+                    String[] daneGracza = czesci[i].split(",");
+                    if (daneGracza.length == 2 && WalidatorDanych.sprawdzNazwisko(daneGracza[1].trim())) {
+                        zawodnicy[i-1] = new GraczSolo(daneGracza[0].trim(), daneGracza[1].trim());
+                    } else {
+                        poprawni = false; break;
+                    }
+                }
+
+                if (poprawni) {
+                    d.dodajZawodnika(zawodnicy);
+                    if (dodajUczestnika(d)) {
+                        dodano++;
+                    }
+                }
+            }
+        }
+        br.close();
+        return dodano;
     }
 
     public void eksportujRaportTxt(String sciezka) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(sciezka));
-        writer.write("--- RAPORT KOŃCOWY TURNIEJU ---");
+        writer.write("--- RAPORT KOŃCOWY TURNIEJU (DRUŻYNY) ---");
         writer.newLine();
-        PriorityQueue<Uczestnik> tabela = generujTabele();
+        PriorityQueue<Uczestnik> tabela = generujTabele(listaUczestnikow);
         int poz = 1;
         while (!tabela.isEmpty()) {
             writer.write(poz + ". " + tabela.poll().pobierzSzczegoly());
@@ -66,13 +107,14 @@ public class MenedzerTurnieju {
         writer.close();
     }
 
+    @SuppressWarnings("unused")
     public void zapiszStan(String sciezka) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(sciezka));
         out.writeObject(listaUczestnikow);
         out.close();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unused", "unchecked"})
     public void wczytajStan(String sciezka) throws IOException, ClassNotFoundException {
         ObjectInputStream in = new ObjectInputStream(new FileInputStream(sciezka));
         listaUczestnikow = (List<Uczestnik>) in.readObject();

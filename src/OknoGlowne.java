@@ -2,20 +2,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
 
 public class OknoGlowne extends JFrame {
     private MenedzerTurnieju menedzer;
     private JTextArea obszarLogow;
-    private ArchiwumTurniejow<GraczSolo> archiwum;
+    private ArchiwumTurniejow<Druzyna> archiwum;
+
+    private List<Uczestnik> grupaA;
+    private List<Uczestnik> grupaB;
 
     public OknoGlowne() {
         menedzer = MenedzerTurnieju.pobierzInstancje();
         archiwum = new ArchiwumTurniejow<>();
 
-        setTitle("Menedżer E-sportowy");
-        setSize(800, 550);
+        setTitle("Menedżer Turnieju Drużynowego - Zaliczenie");
+        setSize(850, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -25,27 +30,25 @@ public class OknoGlowne extends JFrame {
         add(new JScrollPane(obszarLogow), BorderLayout.CENTER);
 
         JPanel panelPrzykow = new JPanel();
-        panelPrzykow.setLayout(new GridLayout(3, 3, 5, 5));
+        panelPrzykow.setLayout(new GridLayout(3, 4, 5, 5));
 
-        JButton btnDodaj = new JButton("Dodaj Gracza");
-        JButton btnTabela = new JButton("Pokaż Tabelę");
-        JButton btnUsun = new JButton("Usuń Gracza");
-        JButton btnFazaGrupowa = new JButton("Symuluj Fazę Grupową");
-        JButton btnDrabinka = new JButton("Drabinka (Finały)");
-        JButton btnZapisz = new JButton("Zapisz do Pliku");
-        JButton btnWczytaj = new JButton("Wczytaj z Pliku");
+        JButton btnDodaj = new JButton("1. Dodaj Drużynę");
+        JButton btnImport = new JButton("2. Import Drużyn (TXT)");
+        JButton btnFazaGrupowa = new JButton("3. Losuj i Graj (Grupy)");
+        JButton btnTabela = new JButton("4. Pokaż Tabele Grup");
+        JButton btnDrabinka = new JButton("5. Finały (Drabinka)");
         JButton btnEksport = new JButton("Eksportuj Raport TXT");
+        JButton btnUsun = new JButton("Usuń Drużynę");
         JButton btnCzysc = new JButton("Wyczyść Ekran");
 
         panelPrzykow.add(btnDodaj);
+        panelPrzykow.add(btnImport);
         panelPrzykow.add(btnFazaGrupowa);
-        panelPrzykow.add(btnDrabinka);
         panelPrzykow.add(btnTabela);
+        panelPrzykow.add(btnDrabinka);
+        panelPrzykow.add(btnEksport);
         panelPrzykow.add(btnUsun);
         panelPrzykow.add(btnCzysc);
-        panelPrzykow.add(btnZapisz);
-        panelPrzykow.add(btnWczytaj);
-        panelPrzykow.add(btnEksport);
 
         add(panelPrzykow, BorderLayout.SOUTH);
 
@@ -54,23 +57,57 @@ public class OknoGlowne extends JFrame {
         btnDodaj.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String imie = JOptionPane.showInputDialog("Podaj imię:");
-                if (imie == null || imie.trim().isEmpty()) return;
+                String nazwa = JOptionPane.showInputDialog("Podaj nazwę Drużyny:");
+                if (nazwa == null || nazwa.trim().isEmpty()) return;
 
-                String nick = JOptionPane.showInputDialog("Podaj pseudonim (tylko litery/cyfry, 3-15 znaków):");
-                if (nick == null) return;
+                if (!WalidatorDanych.sprawdzNazweDruzyny(nazwa)) {
+                    JOptionPane.showMessageDialog(null, "Błędna nazwa drużyny! (3-30 znaków)");
+                    return;
+                }
 
-                if (WalidatorDanych.sprawdzNick(nick)) {
-                    GraczSolo nowy = new GraczSolo(imie, nick);
-                    if (menedzer.dodajUczestnika(nowy)) {
-                        archiwum.dodajDoHistorii(nowy);
-                        log("Dodano gracza: " + nowy.pobierzPseudonim());
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Uczestnik o takim imieniu już istnieje!");
+                String nazwiska = JOptionPane.showInputDialog("Podaj dokładnie 5 nazwisk zawodników po przecinku:");
+                if (nazwiska == null) return;
+
+                String[] listaNazwisk = nazwiska.split(",");
+                if (listaNazwisk.length != 5) {
+                    JOptionPane.showMessageDialog(null, "Błąd! Musisz podać dokładnie 5 nazwisk!");
+                    return;
+                }
+
+                Druzyna nowaDruzyna = new Druzyna(nazwa);
+                GraczSolo[] zawodnicy = new GraczSolo[5];
+
+                for (int i = 0; i < 5; i++) {
+                    String nazwiskoZawodnika = listaNazwisk[i].trim();
+                    if (!WalidatorDanych.sprawdzNazwisko(nazwiskoZawodnika)) {
+                        JOptionPane.showMessageDialog(null, "Błąd walidacji! Złe nazwisko: " + nazwiskoZawodnika);
+                        return;
                     }
+                    zawodnicy[i] = new GraczSolo("Gracz", nazwiskoZawodnika);
+                }
+
+                nowaDruzyna.dodajZawodnika(zawodnicy);
+
+                if (menedzer.dodajUczestnika(nowaDruzyna)) {
+                    archiwum.dodajDoHistorii(nowaDruzyna);
+                    log("Dodano Drużynę: " + nowaDruzyna.pobierzNazwe());
                 } else {
-                    // Zmieniony, w 100% czysty i profesjonalny komunikat błędu
-                    JOptionPane.showMessageDialog(null, "Błąd! Pseudonim musi mieć od 3 do 15 znaków i składać się wyłącznie z liter lub cyfr.");
+                    JOptionPane.showMessageDialog(null, "Drużyna o takiej nazwie już istnieje!");
+                }
+            }
+        });
+
+        btnImport.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String sciezka = JOptionPane.showInputDialog("Podaj nazwę pliku:", "druzyny.txt");
+                if (sciezka != null) {
+                    try {
+                        int dodano = menedzer.importujDruzynyZTXT(sciezka);
+                        log("Zaimportowano " + dodano + " drużyn z pliku " + sciezka);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Błąd odczytu pliku: " + sciezka);
+                    }
                 }
             }
         });
@@ -78,25 +115,24 @@ public class OknoGlowne extends JFrame {
         btnTabela.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                PriorityQueue<Uczestnik> tabela = menedzer.generujTabele();
-                log("\n--- TABELA WYNIKÓW ---");
-                int poz = 1;
-                while (!tabela.isEmpty()) {
-                    log(poz + ". " + tabela.poll().pobierzSzczegoly());
-                    poz++;
+                if (grupaA == null || grupaB == null) {
+                    log("Grupy nie zostały jeszcze wylosowane!");
+                    return;
                 }
+                wypiszTabele("GRUPA A", grupaA);
+                wypiszTabele("GRUPA B", grupaB);
             }
         });
 
         btnUsun.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String nazwa = JOptionPane.showInputDialog("Kogo usunąć (imię):");
+                String nazwa = JOptionPane.showInputDialog("Którą drużynę usunąć (nazwa):");
                 if (nazwa != null && !nazwa.trim().isEmpty()) {
-                    if (menedzer.usunGracza(nazwa)) {
-                        log("Pomyślnie usunięto gracza: " + nazwa);
+                    if (menedzer.usunDruzynne(nazwa)) {
+                        log("Pomyślnie usunięto drużynę: " + nazwa);
                     } else {
-                        log("Nie znaleziono gracza o imieniu: " + nazwa);
+                        log("Nie znaleziono drużyny o nazwie: " + nazwa);
                     }
                 }
             }
@@ -105,21 +141,28 @@ public class OknoGlowne extends JFrame {
         btnFazaGrupowa.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                List<Uczestnik> wszyscy = menedzer.pobierzWszystkich();
-                if (wszyscy.size() < 3) {
-                    JOptionPane.showMessageDialog(null, "Potrzeba minimum 3 graczy do fazy grupowej!");
+                List<Uczestnik> wszyscy = new ArrayList<>(menedzer.pobierzWszystkich());
+                if (wszyscy.size() < 4) {
+                    JOptionPane.showMessageDialog(null, "Potrzeba minimum 4 drużyn do podziału na grupy!");
                     return;
                 }
 
-                log("\n=== ROZPOCZĘCIE FAZY GRUPOWEJ (KAŻDY Z KAŻDYM) ===");
+                for(Uczestnik u : wszyscy) u.resetujPunkty();
+
+                Collections.shuffle(wszyscy);
+                int srodek = wszyscy.size() / 2;
+                grupaA = wszyscy.subList(0, srodek);
+                grupaB = wszyscy.subList(srodek, wszyscy.size());
+
+                log("\n=== WYLOSOWANO GRUPY ===");
+                log("GRUPA A: " + grupaA.size() + " drużyn");
+                log("GRUPA B: " + grupaB.size() + " drużyn");
+                log("=== ROZPOCZĘCIE MECZÓW W GRUPACH ===");
+
                 try {
-                    for (int i = 0; i < wszyscy.size(); i++) {
-                        for (int j = i + 1; j < wszyscy.size(); j++) {
-                            Mecz m = new Mecz(wszyscy.get(i), wszyscy.get(j));
-                            log(m.symulujMecz());
-                        }
-                    }
-                    log("=== KONIEC FAZY GRUPOWEJ. SPRAWDŹ TABELĘ! ===");
+                    rozegrajMeczeWGrupie("GRUPA A", grupaA);
+                    rozegrajMeczeWGrupie("GRUPA B", grupaB);
+                    log("=== KONIEC FAZY GRUPOWEJ. SPRAWDŹ TABELE! ===");
                 } catch (BlednyMeczException ex) {
                     log("Błąd krytyczny turnieju: " + ex.getMessage());
                 }
@@ -129,74 +172,39 @@ public class OknoGlowne extends JFrame {
         btnDrabinka.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                PriorityQueue<Uczestnik> tabela = menedzer.generujTabele();
-                if (tabela.size() < 4) {
-                    JOptionPane.showMessageDialog(null, "Za mało graczy na półfinały! Wymagane minimum 4 osoby.");
+                if (grupaA == null || grupaB == null) {
+                    JOptionPane.showMessageDialog(null, "Najpierw rozegraj fazę grupową!");
                     return;
                 }
 
-                log("\n=== FAZA PUCHAROWA: PÓŁFINAŁY ===");
-                Uczestnik m1 = tabela.poll();
-                Uczestnik m2 = tabela.poll();
-                Uczestnik m3 = tabela.poll();
-                Uczestnik m4 = tabela.poll();
+                PriorityQueue<Uczestnik> tabA = menedzer.generujTabele(grupaA);
+                PriorityQueue<Uczestnik> tabB = menedzer.generujTabele(grupaB);
+
+                if (tabA.size() < 2 || tabB.size() < 2) {
+                    JOptionPane.showMessageDialog(null, "Za mało drużyn na półfinały!");
+                    return;
+                }
+
+                log("\n=========== FAZA PUCHAROWA ===========");
+                Uczestnik a1 = tabA.poll();
+                Uczestnik a2 = tabA.poll();
+                Uczestnik b1 = tabB.poll();
+                Uczestnik b2 = tabB.poll();
 
                 try {
-                    log("Półfinał 1: " + m1.pobierzNazwe() + " vs " + m4.pobierzNazwe());
-                    Mecz pol1 = new Mecz(m1, m4);
-                    while (pol1.symulujMecz().contains("REMIS")) {
-                        m1.dodajPunkty(-1); m4.dodajPunkty(-1);
-                        pol1 = new Mecz(m1, m4);
-                    }
-                    log(" -> Awans: " + (m1.pobierzPunkty() > m4.pobierzPunkty() ? m1.pobierzNazwe() : m4.pobierzNazwe()));
+                    log(">> Półfinał 1: [1. Grupa A] " + a1.pobierzNazwe() + " vs [2. Grupa B] " + b2.pobierzNazwe());
+                    Uczestnik finalista1 = grajDrabinke(a1, b2);
 
-                    log("Półfinał 2: " + m2.pobierzNazwe() + " vs " + m3.pobierzNazwe());
-                    Mecz pol2 = new Mecz(m2, m3);
-                    while (pol2.symulujMecz().contains("REMIS")) {
-                        m2.dodajPunkty(-1); m3.dodajPunkty(-1);
-                        pol2 = new Mecz(m2, m3);
-                    }
-                    log(" -> Awans: " + (m2.pobierzPunkty() > m3.pobierzPunkty() ? m2.pobierzNazwe() : m3.pobierzNazwe()));
+                    log(">> Półfinał 2: [1. Grupa B] " + b1.pobierzNazwe() + " vs [2. Grupa A] " + a2.pobierzNazwe());
+                    Uczestnik finalista2 = grajDrabinke(b1, a2);
 
-                    log("\n=== WIELKI FINAŁ ===");
-                    Uczestnik finalista1 = m1.pobierzPunkty() > m4.pobierzPunkty() ? m1 : m4;
-                    Uczestnik finalista2 = m2.pobierzPunkty() > m3.pobierzPunkty() ? m2 : m3;
+                    log("\n>> WIELKI FINAŁ: " + finalista1.pobierzNazwe() + " vs " + finalista2.pobierzNazwe());
+                    Uczestnik mistrz = grajDrabinke(finalista1, finalista2);
 
-                    Mecz wielkiFinal = new Mecz(finalista1, finalista2);
-                    while (wielkiFinal.symulujMecz().contains("REMIS")) {
-                        finalista1.dodajPunkty(-1); finalista2.dodajPunkty(-1);
-                        wielkiFinal = new Mecz(finalista1, finalista2);
-                    }
-
-                    Uczestnik zwyciezca = finalista1.pobierzPunkty() > finalista2.pobierzPunkty() ? finalista1 : finalista2;
-                    log("★★★ ZWYCIĘZCA TURNIEJU: " + zwyciezca.pobierzNazwe().toUpperCase() + " ★★★");
+                    log("★★★ ZWYCIĘZCA TURNIEJU: " + mistrz.pobierzNazwe().toUpperCase() + " ★★★\n");
 
                 } catch (BlednyMeczException ex) {
                     log("Błąd generowania drabinki: " + ex.getMessage());
-                }
-            }
-        });
-
-        btnZapisz.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    menedzer.zapiszStan("turniej_zapis.dat");
-                    log("Zapisano stan turnieju na dysku.");
-                } catch (Exception ex) {
-                    log("Błąd zapisu: " + ex.getMessage());
-                }
-            }
-        });
-
-        btnWczytaj.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    menedzer.wczytajStan("turniej_zapis.dat");
-                    log("Wczytano stan turnieju z dysku.");
-                } catch (Exception ex) {
-                    log("Błąd odczytu: " + ex.getMessage());
                 }
             }
         });
@@ -214,7 +222,65 @@ public class OknoGlowne extends JFrame {
         });
     }
 
+    private void wypiszTabele(String nazwaGrupy, List<Uczestnik> grupa) {
+        PriorityQueue<Uczestnik> tabela = menedzer.generujTabele(grupa);
+        log("\n--- TABELA " + nazwaGrupy + " ---");
+        int poz = 1;
+        while (!tabela.isEmpty()) {
+            log(poz + ". " + tabela.poll().pobierzSzczegoly());
+            poz++;
+        }
+    }
+
+    private void rozegrajMeczeWGrupie(String nazwaGrupy, List<Uczestnik> grupa) throws BlednyMeczException {
+        for (int i = 0; i < grupa.size(); i++) {
+            for (int j = i + 1; j < grupa.size(); j++) {
+                Mecz m = new Mecz(grupa.get(i), grupa.get(j));
+                String n1 = m.pobierzUczestnika1().pobierzNazwe();
+                String n2 = m.pobierzUczestnika2().pobierzNazwe();
+
+                String[] opcje = {n1 + " Wygrywa", "REMIS", n2 + " Wygrywa"};
+                int wybor = JOptionPane.showOptionDialog(null,
+                        "Kto wygrał mecz w grupie?\n" + n1 + " vs " + n2,
+                        nazwaGrupy + ": Wpisz wynik",
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opcje, opcje[0]);
+
+                String wynikTekst;
+                if (wybor == 0) wynikTekst = m.wpiszWynikRecznie(1);
+                else if (wybor == 2) wynikTekst = m.wpiszWynikRecznie(2);
+                else wynikTekst = m.wpiszWynikRecznie(0);
+
+                log("[" + nazwaGrupy + "] " + wynikTekst);
+                menedzer.logujMeczDoPliku("[" + nazwaGrupy + "] " + wynikTekst);
+            }
+        }
+    }
+
+    private Uczestnik grajDrabinke(Uczestnik u1, Uczestnik u2) throws BlednyMeczException {
+        Mecz m = new Mecz(u1, u2);
+        String[] opcje = {u1.pobierzNazwe() + " Wygrywa", u2.pobierzNazwe() + " Wygrywa"};
+        int wybor = JOptionPane.showOptionDialog(null,
+                "Faza Pucharowa (brak remisów)!\n" + u1.pobierzNazwe() + " vs " + u2.pobierzNazwe(),
+                "Drabinka: Wpisz wynik",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, opcje, opcje[0]);
+
+        String wynikTekst;
+        Uczestnik wygrany;
+        if (wybor == 0) {
+            wynikTekst = m.wpiszWynikRecznie(1);
+            wygrany = u1;
+        } else {
+            wynikTekst = m.wpiszWynikRecznie(2);
+            wygrany = u2;
+        }
+
+        log("[DRABINKA] " + wynikTekst);
+        menedzer.logujMeczDoPliku("[DRABINKA] " + wynikTekst);
+        return wygrany;
+    }
+
     private void log(String wiadomosc) {
         obszarLogow.append(wiadomosc + "\n");
+        obszarLogow.setCaretPosition(obszarLogow.getDocument().getLength());
     }
 }

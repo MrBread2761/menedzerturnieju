@@ -1,19 +1,19 @@
 public class GraczSolo extends Uczestnik {
-    private String pseudonim;
+    private String nazwisko;
     private transient boolean obecnyNaTurnieju;
 
-    public GraczSolo(String nazwa, String pseudonim) {
+    public GraczSolo(String nazwa, String nazwisko) {
         super(nazwa);
-        this.pseudonim = pseudonim;
+        this.nazwisko = nazwisko;
         this.obecnyNaTurnieju = true;
     }
 
-    public String pobierzPseudonim() {
-        return this.pseudonim;
+    public String pobierzNazwisko() {
+        return this.nazwisko;
     }
 
     @Override
     public String pobierzSzczegoly() {
-        return "Gracz: " + pobierzNazwe() + " (" + pseudonim + ") | Punkty: " + pobierzPunkty();
+        return "Zawodnik: " + pobierzNazwe() + " " + nazwisko + " | Punkty: " + pobierzPunkty();
     }
 }

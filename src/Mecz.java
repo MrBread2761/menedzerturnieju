@@ -15,24 +15,23 @@ public class Mecz {
         this.rozegrany = false;
     }
 
-    public String symulujMecz() {
+    public Uczestnik pobierzUczestnika1() { return u1; }
+    public Uczestnik pobierzUczestnika2() { return u2; }
+
+    public String wpiszWynikRecznie(int opcja) {
         if (rozegrany) return "Ten mecz już się odbył.";
-
-        int wynik1 = (int)(Math.random() * 5);
-        int wynik2 = (int)(Math.random() * 5);
-
         rozegrany = true;
 
-        if (wynik1 > wynik2) {
+        if (opcja == 1) {
             u1.dodajPunkty(3);
-            return "WYGRANA: " + u1.pobierzNazwe() + " pokonuje " + u2.pobierzNazwe() + " (" + wynik1 + ":" + wynik2 + ") [+3 pkt]";
-        } else if (wynik1 < wynik2) {
+            return "WYGRANA: " + u1.pobierzNazwe() + " pokonuje " + u2.pobierzNazwe() + " [3 pkt]";
+        } else if (opcja == 2) {
             u2.dodajPunkty(3);
-            return "WYGRANA: " + u2.pobierzNazwe() + " pokonuje " + u1.pobierzNazwe() + " (" + wynik2 + ":" + wynik1 + ") [+3 pkt]";
+            return "WYGRANA: " + u2.pobierzNazwe() + " pokonuje " + u1.pobierzNazwe() + " [3 pkt]";
         } else {
             u1.dodajPunkty(1);
             u2.dodajPunkty(1);
-            return "REMIS: " + u1.pobierzNazwe() + " remisuje z " + u2.pobierzNazwe() + " (" + wynik1 + ":" + wynik2 + ") [+1 pkt dla obu]";
+            return "REMIS: " + u1.pobierzNazwe() + " remisuje z " + u2.pobierzNazwe() + " [po 1 pkt]";
         }
     }
 }

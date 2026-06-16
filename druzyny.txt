@@ -1,0 +1,8 @@
+Orly;Jan,Kowalski;Piotr,Nowak;Kamil,Klos;Michal,Polak;Tomasz,Kot
+Tygrysy;Marek,Mostowiak;Adam,Maly;Krzysztof,Duzy;Filip,Ostry;Dawid,Krotki
+Sokoly;Jan,Kowal;Piotr,Ziemniak;Kamil,Burak;Michal,Pomidor;Tomasz,Ser
+Lwy;Marek,Bomba;Adam,Woda;Krzysztof,Ogien;Filip,Ziemia;Dawid,Wiatr
+Pantery;Jan,Kos;Piotr,Lis;Kamil,Wilk;Michal,Dziki;Tomasz,Ryba
+Wilki;Marek,Drzewo;Adam,Krzak;Krzysztof,Trawa;Filip,Lisc;Dawid,Korzen
+Niedzwiedzie;Jan,Zelazo;Piotr,Stal;Kamil,Miedz;Michal,Zloto;Tomasz,Srebro
+Orki;Marek,Dom;Adam,Dach;Krzysztof,Mur;Filip,Okno;Dawid,Drzwi

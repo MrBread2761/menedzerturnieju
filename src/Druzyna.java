@@ -17,6 +17,6 @@ public class Druzyna extends Uczestnik {
 
     @Override
     public String pobierzSzczegoly() {
-        return "Drużyna: " + pobierzNazwe() + " (Skład: " + sklad.size() + " os.) | Punkty: " + pobierzPunkty();
+        return "Drużyna: " + pobierzNazwe() + " | Punkty: " + pobierzPunkty();
     }
 }
