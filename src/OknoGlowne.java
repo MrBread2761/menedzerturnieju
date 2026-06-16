@@ -24,6 +24,16 @@ public class OknoGlowne extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        JMenuBar menuBar = new JMenuBar();
+        JMenu menuPlik = new JMenu("Plik");
+        JMenuItem itemZapisz = new JMenuItem("Zapisz stan (.dat)");
+        JMenuItem itemWczytaj = new JMenuItem("Wczytaj stan (.dat)");
+
+        menuPlik.add(itemZapisz);
+        menuPlik.add(itemWczytaj);
+        menuBar.add(menuPlik);
+        setJMenuBar(menuBar);
+
         obszarLogow = new JTextArea();
         obszarLogow.setEditable(false);
         obszarLogow.setFont(new Font("Monospaced", Font.PLAIN, 14));
@@ -53,6 +63,33 @@ public class OknoGlowne extends JFrame {
         add(panelPrzykow, BorderLayout.SOUTH);
 
         btnCzysc.addActionListener(e -> obszarLogow.setText(""));
+
+        itemZapisz.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    menedzer.zapiszStan("turniej_zapis.dat");
+                    log("Zapisano stan turnieju do pliku turniej_zapis.dat");
+                } catch (Exception ex) {
+                    log("Błąd zapisu: " + ex.getMessage());
+                }
+            }
+        });
+
+        itemWczytaj.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    menedzer.wczytajStan("turniej_zapis.dat");
+                    // Pobieramy grupy przywrócone z pliku
+                    grupaA = menedzer.pobierzGrupeA();
+                    grupaB = menedzer.pobierzGrupeB();
+                    log("Wczytano stan turnieju z pliku turniej_zapis.dat");
+                } catch (Exception ex) {
+                    log("Błąd odczytu: " + ex.getMessage());
+                }
+            }
+        });
 
         btnDodaj.addActionListener(new ActionListener() {
             @Override
@@ -151,8 +188,11 @@ public class OknoGlowne extends JFrame {
 
                 Collections.shuffle(wszyscy);
                 int srodek = wszyscy.size() / 2;
-                grupaA = wszyscy.subList(0, srodek);
-                grupaB = wszyscy.subList(srodek, wszyscy.size());
+
+                // Użycie ArrayList dla bezpiecznej serializacji w przyszłości
+                grupaA = new ArrayList<>(wszyscy.subList(0, srodek));
+                grupaB = new ArrayList<>(wszyscy.subList(srodek, wszyscy.size()));
+                menedzer.ustawGrupy(grupaA, grupaB);
 
                 log("\n=== WYLOSOWANO GRUPY ===");
                 log("GRUPA A: " + grupaA.size() + " drużyn");

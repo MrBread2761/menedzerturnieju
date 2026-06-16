@@ -7,10 +7,16 @@ public class MenedzerTurnieju {
     private final HashSet<String> zajeteNazwy;
     private final HashMap<String, Uczestnik> mapaUczestnikow;
 
+    // Nowe zmienne do zapamiętywania podziału na grupy podczas zapisu
+    private List<Uczestnik> grupaA;
+    private List<Uczestnik> grupaB;
+
     private MenedzerTurnieju() {
         listaUczestnikow = new ArrayList<>();
         zajeteNazwy = new HashSet<>();
         mapaUczestnikow = new HashMap<>();
+        grupaA = null;
+        grupaB = null;
     }
 
     public static MenedzerTurnieju pobierzInstancje() {
@@ -19,6 +25,14 @@ public class MenedzerTurnieju {
         }
         return instancja;
     }
+
+    public void ustawGrupy(List<Uczestnik> a, List<Uczestnik> b) {
+        this.grupaA = a;
+        this.grupaB = b;
+    }
+
+    public List<Uczestnik> pobierzGrupeA() { return grupaA; }
+    public List<Uczestnik> pobierzGrupeB() { return grupaB; }
 
     public boolean dodajUczestnika(Uczestnik u) {
         if (zajeteNazwy.contains(u.pobierzNazwe())) {
@@ -107,18 +121,27 @@ public class MenedzerTurnieju {
         writer.close();
     }
 
-    @SuppressWarnings("unused")
     public void zapiszStan(String sciezka) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(sciezka));
         out.writeObject(listaUczestnikow);
+        out.writeObject(grupaA);
+        out.writeObject(grupaB);
         out.close();
     }
 
-    @SuppressWarnings({"unused", "unchecked"})
+    @SuppressWarnings("unchecked")
     public void wczytajStan(String sciezka) throws IOException, ClassNotFoundException {
         ObjectInputStream in = new ObjectInputStream(new FileInputStream(sciezka));
         listaUczestnikow = (List<Uczestnik>) in.readObject();
+        try {
+            grupaA = (List<Uczestnik>) in.readObject();
+            grupaB = (List<Uczestnik>) in.readObject();
+        } catch(Exception e) {
+            grupaA = null;
+            grupaB = null;
+        }
         in.close();
+
         zajeteNazwy.clear();
         mapaUczestnikow.clear();
         for (Uczestnik u : listaUczestnikow) {
